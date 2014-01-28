@@ -48,9 +48,17 @@ module SimplesIdeias
       end
     end
 
-    def segments_per_locale(pattern,scope)
+    def segments_per_locale(pattern,scope,fallback)
       ::I18n.available_locales.each_with_object({}) do |locale,segments|
-        result = scoped_translations("#{locale}.#{scope}")
+        result = {}
+        result[locale] = {}
+        scope = [scope] unless scope.kind_of?(Array)
+
+        scope.each do |key|
+          result = deep_merge(result, scoped_translations("#{locale}.#{key}"))
+          merge_with_fallback!(result, locale, key, fallback) if fallback
+        end
+
         unless result.empty?
           segment_name = ::I18n.interpolate(pattern,{:locale => locale})
           segments[segment_name] = result
@@ -68,9 +76,9 @@ module SimplesIdeias
 
     def configured_segments
       config[:translations].each_with_object({}) do |options,segments|
-        options.reverse_merge!(:only => "*")
+        options.reverse_merge!(:only => "*", :fallback => false)
         if options[:file] =~ ::I18n::INTERPOLATION_PATTERN
-          segments.merge!(segments_per_locale(options[:file],options[:only]))
+          segments.merge!(segments_per_locale(options[:file],options[:only],options[:fallback]))
         else
           result = segment_for_scope(options[:only])
           segments[options[:file]] = result unless result.empty?
@@ -177,6 +185,21 @@ module SimplesIdeias
     def deep_merge!(target, hash) # :nodoc:
       target.merge!(hash, &MERGER)
     end
+
+    def merge_with_fallback!(result,locale,scope,fallback)
+      fallback_locale = fallback_locale(fallback)
+      fallback_result = scoped_translations("#{fallback_locale}.#{scope}")
+
+      if result[locale].present?
+        result[locale] = deep_merge(fallback_result[fallback_locale], result[locale])
+      else
+        result[locale] = fallback_result[fallback_locale]
+      end
+    end
+
+    def fallback_locale(locale)
+      locale = locale.to_s.intern
+      ::I18n.available_locales.include?(locale) ? locale : ::I18n.default_locale
+    end
   end
 end
-
