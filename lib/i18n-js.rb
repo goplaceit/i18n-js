@@ -90,8 +90,12 @@ module SimplesIdeias
     # custom output directory
     def config
       if config?
-        erb = ERB.new(File.read(config_file)).result
-        (YAML.load(erb) || {}).with_indifferent_access
+        if File.file?("#{config_file}.erb")
+          erb = ERB.new(File.read("#{config_file}.erb")).result
+          (YAML.load(erb) || {}).with_indifferent_access
+        else
+          (YAML.load_file(config_file) || {}).with_indifferent_access
+        end
       else
         {}
       end
@@ -99,7 +103,7 @@ module SimplesIdeias
 
     # Check if configuration file exist
     def config?
-      File.file? config_file
+      File.file?(config_file) || File.file?("#{config_file}.erb")
     end
 
     # Copy configuration and JavaScript library files to
