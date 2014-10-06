@@ -135,9 +135,11 @@ module SimplesIdeias
 
       File.open(file, "w+") do |f|
         f << %(var I18n = I18n || {};\n)
-        f << %(I18n.translations = );
+        f << %(var translations = );
         f << translations.to_json
         f << %(;)
+        f << %(I18n.translations = I18n.translations || {};)
+        f << %($.extend(true, I18n.translations, translations);)
       end
     end
 
