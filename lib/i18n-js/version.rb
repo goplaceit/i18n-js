@@ -3,7 +3,7 @@ module SimplesIdeias
     module Version
       MAJOR = 2
       MINOR = 1
-      PATCH = 7
+      PATCH = 8
       STRING = "#{MAJOR}.#{MINOR}.#{PATCH}"
     end
   end
